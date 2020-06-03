@@ -1,2 +1,2 @@
-# Conjoint survey experiment
+# Conjoint survey experiment with populist voters
 Here you can find an R code, data, and graphs on how we study people's policy preferences with conjoint survey experiments. Specifically, with candidate choice-based conjoints. We focus on populist radical voters here and compare their policy preferences with mainstream and left-wing voters. Overall, we included five policy areas into the experiment: immigration, living costs, climate change, European Union, and populism.
