@@ -42,33 +42,57 @@ surveys <- readRDS("../Data/paneldata.Rds") # survey data
 load("../Output/conjoint_sample.Rda") # respondents with party ids from conjoint
 df <- merge(surveys, conjoint_sample, by = "panelist_id") # merge with conjoint sample
 
+library(plyr)
+df$issue_recode <- revalue(df$issuesfirstW1, c(
+                                  "Rising prices / cost of living"="Living costs",
+                                  "The education system"="Education",
+                                  "Environment, climate and energy"="Environment",
+                                  "Economic situation"="Economy",
+                                  "Health and social security"="Social security",
+                                  "Brexit (only asked in UK)"="Brexit"))
+
+df$group <- revalue(df$group, c("nonPRVV"="non-PRRV"))
+
+# de install plyr package
+#remove.packages("plyr")
+
 
 # All countries Wave 1: PRRV vs non PRRV
-df %>% filter(!is.na(issuesfirstW1) & issuesfirstW1 != "Don't know/no responce") %>%
-  group_by(group, issuesfirstW1) %>% 
+df %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW1, y=perc*100, fill=ifelse(issuesfirstW1=="Immigration",      "Highlighted", "Normal"))) + 
-  geom_bar(stat="identity", width = 0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3), legend.position="none") +
+  ggplot(aes(x=issue_recode, y=perc*100, 
+             fill=ifelse(issue_recode=="Immigration", "Highlighted", "Normal"))) + 
+  geom_bar(stat="identity", width=0.7) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
-  labs(title="Most important issue facing the country (Wave 1)", x="", y="Percent (%)") + 
-  scale_fill_manual(values = c("red", "#666666"))
+    coord_cartesian(ylim = c(0, 30)) +
+  labs(title="Most important issue facing the country", x="", y="Percent") + 
+  scale_fill_manual(values=c("red", "#666666")) +
+  theme(axis.text = element_text(size=8), axis.title = element_text(size=8),
+        title=element_text(size=10))
 
 
 # without Germany
-pooled_issueW1 <- df %>% filter(country.x != "Germany") %>%  filter(!is.na(issuesfirstW1) & issuesfirstW1 !=  "Don't know/no responce") %>%
-  group_by(group, issuesfirstW1) %>% 
+df %>% filter(country.x != "Germany") %>%  
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW1, y=perc*100, fill=ifelse(issuesfirstW1=="Immigration",      "Highlighted", "Normal"))) + 
+  ggplot(aes(x=issue_recode, y=perc*100, fill=ifelse(issue_recode=="Immigration",      
+                                                     "Highlighted", "Normal"))) + 
   geom_bar(stat="identity", width=0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3), 
-        legend.positio ="none") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.positio="none") +
   facet_wrap(~group, scales="free_x") +
-  labs(title="Most important issue facing the country (without Germany)", 
-       x="", y="Percent (%)") + 
-  scale_fill_manual(values=c("red", "#666666"))
+  coord_cartesian(ylim = c(0, 30)) +
+  labs(title="Most important issue facing the country (without Germany)", x="", 
+       y="Percent") + 
+  scale_fill_manual(values=c("red", "#666666")) +
+  theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=10))
 
 
 ```
@@ -76,98 +100,129 @@ pooled_issueW1 <- df %>% filter(country.x != "Germany") %>%  filter(!is.na(issue
 
 ```{r Issuefirst Wave 2}
 
-# All countries Wave 2: PRRV vs non PRRV
-pooled_issueW2 <-  df %>% filter(!is.na(issuesfirstW2) & issuesfirstW2 != "Don't know/no responce") %>%
-  group_by(group, issuesfirstW2) %>% 
-  summarise(count=n()) %>%
-  mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW2, y=perc*100, fill=ifelse(issuesfirstW2=="9", "Highlighted", 
-                                                      "Normal"))) + 
-  geom_bar(stat="identity", width = 0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3), legend.position="none") +
-  facet_wrap(~group, scales="free_x") +
-  labs(title="Most important issue facing the country (Wave2)", x="", y="Percent (%)") + 
-  scale_fill_manual(values = c("red", "#666666"))
+df$issuesfirstW2 <- factor(df$issuesfirstW2)
+df$issuesfirstW2_recode <- revalue(df$issuesfirstW2, c("1"="Crime",
+                                                       "2"="Economy",
+                                                       "3"="Living costs",
+                                                       "4"="Taxation",
+                                                       "5"="Unemployment",
+                                                       "6"="Terrorism",
+                                                       "7"="Housing",
+                                                       "8"="Government debt",
+                                                       "9"="Immigration",
+                                                       "10"="Social security",
+                                                       "11"="Education",
+                                                       "12"="Pensions",
+                                                       "13"="Environment",
+                                                       "14"="Brexit",
+                                                       "15"="Other issue"))
+
+
+# All countries Wave 1 next to Wave 2
+df_issue <- df %>% select(issue_recode,issuesfirstW2_recode, group) %>%
+  filter(group=="PRRV")
+issueW1_share = table(df_issue$issue_recode)/nrow(df_issue)*100
+issueW2_share = table(df_issue$issuesfirstW2_recode)/nrow(df_issue)*100
+df_sharesW1 <- data.frame(issueW1_share, Wave=rep("Wave 1", nrow(issueW1_share)))
+df_sharesW2 <- data.frame(issueW2_share, Wave=rep("Wave 2", nrow(issueW2_share)))
+df_issuesW <- rbind(df_sharesW1, df_sharesW2)
+df_issuesW <- df_issuesW %>% filter(Var1 != "0" & Var1 != "Brexit") 
+
+
+ggplot(df_issuesW, aes(Var1, Freq, fill=Wave, col=Wave, linetype=Wave)) +
+  geom_bar(aes(fill=Wave),stat="identity",position="identity") +
+  scale_fill_manual(values = alpha(c("#666666", "#CCCCCC"), 0.3)) +
+  scale_color_manual(values = c("black","black")) +
+  scale_linetype_manual(values = c("blank", "dashed")) +
+  theme_bw() +
+  scale_size_manual(values=c(0.2, 0.2)) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  coord_cartesian(ylim = c(0, 30)) +
+  labs(title="PRRV: Most important issue facing the country", y="Percent", x="") +
+  theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=8), legend.title = element_blank())
 
 ```
 
 
-```{r Figure 1: PRRV vs nonPRRV and most important issue by COUNTRY}
+```{r Figure 1 PRRV vs nonPRRV and most important issue by COUNTRY}
 
 # France: PRRV vs nonPRRV
-fr_issue <- df %>% filter(country.x=="France") %>% filter(!is.na(issuesfirstW1) & issuesfirstW1 != "Don't know/no responce") %>%
-  group_by(group, issuesfirstW1) %>% 
+fr_issue <- df %>% filter(country.x=="France") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW1, y=perc*100, fill=ifelse(issuesfirstW1=="Immigration",     "Highlighted", "Normal"))) + 
+  ggplot(aes(x=issue_recode, y=perc*100, 
+             fill=ifelse(issue_recode=="Immigration", "Highlighted", "Normal"))) + 
   geom_bar(stat="identity", width=0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3), 
-        legend.position="none") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
-  labs(title="France: Most important issue facing the country", x="", y="Percent (%)") + 
-  scale_fill_manual(values=c("red", "#666666"))
+  labs(title="France", x="", y="Percent") + 
+  scale_fill_manual(values=c("red", "#666666")) +
+  theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
+        title=element_text(size=8))
 
+# Most important issue facing the country
 
 # Italy: PRRV vs nonPRRV
-it_issue <- df %>% filter(country.x=="Italy") %>% filter(!is.na(issuesfirstW1) & issuesfirstW1 != "Don't know/no responce") %>%
-  group_by(group, issuesfirstW1) %>% 
+it_issue <- df %>% filter(country.x=="Italy") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW1, y=perc*100, fill=ifelse(issuesfirstW1=="Immigration",      "Highlighted", "Normal"))) + 
+  ggplot(aes(x=issue_recode, y=perc*100, 
+             fill=ifelse(issue_recode=="Immigration", "Highlighted", "Normal"))) + 
   geom_bar(stat="identity", width=0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3),
-        legend.position="none") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
-  labs(title="Italy: Most important issue facing the country", x="", y="Percent (%)") + 
-  scale_fill_manual(values=c("red", "#666666"))
+  labs(title="Italy", x="", y="") + 
+  scale_fill_manual(values=c("red", "#666666")) +
+  theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
+        title=element_text(size=8))
 
 
 # Germany: PRRV vs nonPRRV
-ger_issue <- df %>% filter(country.x=="Germany") %>% filter(!is.na(issuesfirstW1) & issuesfirstW1 != "Don't know/no responce") %>%
-  group_by(group, issuesfirstW1) %>% 
+ger_issue <- df %>% filter(country.x=="Germany") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW1, y=perc*100, fill=ifelse(issuesfirstW1=="Immigration",      "Highlighted", "Normal"))) + 
+  ggplot(aes(x=issue_recode, y=perc*100, fill=ifelse(issue_recode=="Immigration",      "Highlighted", "Normal"))) + 
   geom_bar(stat="identity", width=0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3), 
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), 
         legend.position = "none") +
   facet_wrap(~group, scales="free_x") +
-  labs(title="Germany: Most important issue facing the country", x="", y="Percent (%)") + 
-  scale_fill_manual(values = c("red", "#666666"))
+  labs(title="Germany", x="", y="Percent") + 
+  scale_fill_manual(values = c("red", "#666666")) +
+  theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
+        title=element_text(size=8))
 
 
 # Spain: PRRV vs nonPRRV
-spain_issue <- df %>% filter(country.x=="Spain") %>% filter(!is.na(issuesfirstW1) & issuesfirstW1 != "Don't know/no responce") %>%
-  group_by(group, issuesfirstW1) %>% 
+spain_issue <- df %>% filter(country.x=="Spain") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
-  ggplot(aes(x=issuesfirstW1, y=perc*100, fill=ifelse(issuesfirstW1=="Immigration",          "Highlighted", "Normal"))) + 
+  ggplot(aes(x=issue_recode, y=perc*100,
+             fill=ifelse(issue_recode=="Immigration", "Highlighted", "Normal"))) + 
   geom_bar(stat="identity", width=0.7) +
-  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.3), legend.position="none") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
-  labs(title="Spain: Most important issue facing the country", x="", y="Percent (%)") + 
-  scale_fill_manual(values=c("red", "#666666"))
+  labs(title="Spain", x="", y="") + 
+  scale_fill_manual(values=c("red", "#666666")) +
+  theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
+        title=element_text(size=8))
 
+ggarrange(fr_issue, it_issue, ger_issue, spain_issue, ncol = 2, nrow = 2)
 
-grid.draw(rbind(ggplotGrob(pooled_issueW1), size = "last"))
-
-library(ggpubr)
-ggarrange(pooled_issueW1, # First row with line plot
-  # Second row with box and dot plots
-  ggarrange(fr_issue, it_issue, ger_issue, spain_issue, ncol = 4, 
-            labels = c("B", "C", "D", "E")), 
-            nrow = 2, labels = "A") # Label of the line plot
-
-
-ggarrange(pooled_issueW1, fr_issue+rremove("x.text"), it_issue+rremove("x.text"), ger_issue+rremove("x.text"), spain_issue+rremove("x.text"), labels = c("A", "B", "C", "D", "E"), ncol = 3, nrow = 3)
-
-# +rremove("x.text")
 
 ```
 
 # Most important issue and ideology
 
-```{r Immigration, Climate, Living costs, EU, Populism,}
+```{r Immigration Climate Living costs EU Populism}
 
 # combining left-right variable for Germany from Wave 0 with Wave 1
 df$leftrightW0[is.na(df$leftrightW0)] = 0
@@ -285,7 +340,7 @@ ggplot(combined, aes(estimate, level, colour=Voters)) +
   facet_wrap(~feature, scales="free_y", ncol=1) +
   geom_vline(xintercept = 0.5, linetype="solid", color = "black", size=0.2) +
   annotate("rect", xmin = 0.4, xmax = 0.6, ymin = -Inf, ymax = Inf, 
-           fill = "black", alpha = 0.2, color = NA) +
+           fill = "black", alpha = 0.1, color = NA) +
   ggtitle("") +
   theme_bw() + 
   ylab("") + 
@@ -296,15 +351,6 @@ ggplot(combined, aes(estimate, level, colour=Voters)) +
 
 
 ```
-
-
-```{r, }
-
-
-
-
-```
-
 
 # Testing Pre-registered Hypothesis about The Limist of Issue Frustration
 
@@ -390,7 +436,7 @@ left3b_plot <- plot(
   ) + 
   theme(legend.position="none") + ggtitle("THREE and no Left imm")
 
-# gridExtra::grid.arrange(left3a_plot, left3b_plot, ncol=2)
+gridExtra::grid.arrange(left3a_plot, left3b_plot, ncol=2)
 
 ```
 
@@ -630,38 +676,39 @@ m1 <- cj(dtimm_left1, m, id= ~ panelist_id, estimate="mm", h0=0.5)
 m0 <- cj(dtimm_left0, m, id= ~ panelist_id, estimate="mm", ho=0.5)
 
 
-imm_coefdt <- data.frame(n_left=c("0", "1", "2", "3", "4"), rbind(m0[1,], m1[1,], m2[1,], m3[1,], m4[1,]))
+# with four left positions
+imm4_coefdt <- data.frame(n_left=c("0", "1", "2", "3", "4"), rbind(m0[1,], m1[1,], m2[1,], m3[1,], m4[1,]))
+
+ggplot(imm4_coefdt, aes(x=n_left, y=estimate)) +
+  geom_point(size=1.5, shape=21, fill="black") + 
+  geom_line(aes(group=FALSE), linetype="dashed") + 
+  scale_y_continuous(limits=c(0.48, 1)) +
+  geom_errorbar(mapping=aes(ymax=lower, ymin=upper), width=0.1, size=0.3, color="black") +
+  theme_bw() +
+  geom_hline(yintercept = 0.5, linetype="solid", color = "black", size=0.1) + 
+  xlab("Number of left proposals in anti-immigrant candidate profile") + 
+  ylab("Pr(Choosing anti-immigrant candidate)") +
+  ggtitle("Competing candidate cannot propose pro-immigrant policy") +
+  theme(axis.text=element_text(size=10), axis.title=element_text(size=10),
+        title=element_text(size=10))
 
 
-ggplot() + 
-  geom_errorbarh(data = imm_coefdt, mapping=aes(y=n_left, xmax=lower, xmin=upper),   height=0.2, size=0.5, color="black") + 
-  geom_point(data=imm_coefdt, mapping=aes(y=n_left, x=estimate), size=2, shape=21, 
-             fill="black") + theme_bw() + 
-  ylab("Number of left proposals in anti-immigrant candidate profile") + 
-  xlab("Pr(Choosing anti-immigrant candidate)") +
-  ggtitle("Competing candidate cannot propose pro-immigrant policy") + geom_vline(xintercept = 0.5, linetype="dashed", 
-                color = "black", size=0.5) + 
-  theme(axis.text=element_text(size=10), axis.title=element_text(size=10), title=element_text(size=10)) + 
-  coord_flip()
-
-##
-
+# with three left positions
 imm3_coefdt <- data.frame(n_left=c("0", "1", "2", "3"), rbind(m0[1,], m1[1,], m2[1,], m3[1,]))
 
-ggplot() + 
-  geom_errorbarh(data = imm3_coefdt, mapping=aes(y=n_left, xmax=lower, xmin=upper), 
-                 height=0.2, size=0.5, color="black") + 
-  geom_point(data=imm3_coefdt, mapping=aes(y=n_left, x=estimate), size=2, shape=21, 
-             fill="black") + 
-  scale_x_continuous(limits=c(0.48, 0.9)) +
-  theme_bw() + 
-  ylab("Number of left proposals in anti-immigrant candidate profile") + 
-  xlab("Pr(Choosing anti-immigrant candidate)") +
+ggplot(imm3_coefdt, aes(x=n_left, y=estimate)) +
+  geom_point(size=1.5, shape=21, fill="black") + 
+  geom_line(aes(group=FALSE), linetype="dashed") + 
+  scale_y_continuous(limits=c(0.48, 0.9)) +
+  geom_errorbar(mapping=aes(ymax=lower, ymin=upper), width=0.1, size=0.3, color="black") +
+  theme_bw() +
+  geom_hline(yintercept = 0.5, linetype="solid", color = "black", size=0.1) + 
+  xlab("Number of left proposals in anti-immigrant candidate profile") + 
+  ylab("Pr(Choosing anti-immigrant candidate)") +
   ggtitle("Competing candidate cannot propose pro-immigrant policy") +
-  geom_vline(xintercept = 0.5, linetype="dashed", 
-                color = "black", size=0.5) + 
   theme(axis.text=element_text(size=10), axis.title=element_text(size=10),
-        title=element_text(size=10)) + coord_flip()
+        title=element_text(size=10))
+
 
 
 ```
