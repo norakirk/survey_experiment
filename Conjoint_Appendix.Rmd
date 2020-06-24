@@ -154,8 +154,10 @@ ggplot(df_issuesW, aes(Var1, Freq, fill=Wave, col=Wave, linetype=Wave)) +
 
 library(ggalt) # devtools::install_github("hrbrmstr/ggalt")
 
-df_pew <- df %>% select(issue_recode, group) %>% 
-  filter(!is.na(issue_recode)) %>% 
+df_pew <- df %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  select(issue_recode, group) %>% 
+  filter(!is.na(issue_recode)) %>%
   group_by(group, issue_recode) %>% 
   summarise(count=n()) %>% 
   mutate(perc=(count/sum(count))*100) %>% 
@@ -193,8 +195,7 @@ policy_gap <- ggplot()+
   geom_text(data=df_pew, aes(x=nonPRRV, y=issue_recode, label=percent_first(nonPRRV)),
                      color="black", size=2, vjust=2.5) + 
   geom_text(data=df_pew, color="darkred", size=2, vjust=2.5, aes(x=PRRV, y=issue_recode,                                              label=percent_first(PRRV))) +
-  labs(x="Percent", y=NULL, title="Most important issue gap", subtitle="",
-       caption="") + 
+  labs(x="Percent", y=NULL, title="Most important issue gap", subtitle="", caption="") + 
   theme_bw() +
   theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
         title=element_text(size=8)) +
@@ -203,11 +204,185 @@ policy_gap <- ggplot()+
 
 ```
 
+```{r dunbbell plot by country, }
+
+# Germany
+pew_ger <- df %>% filter(country.x=="Germany") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  select(issue_recode, group) %>% 
+  group_by(group, issue_recode) %>% 
+  summarise(count=n()) %>% 
+  mutate(perc=(count/sum(count))*100) %>% 
+  select(-count)
+
+pew_ger <- spread(pew_ger, "group", "perc")
+pew_ger$nonPRRV <- pew_ger$`non-PRRV`
+pew_ger$`non-PRRV` <- NULL
+pew_ger$diff <- sprintf("%d", as.integer((pew_ger$PRRV-pew_ger$nonPRRV)))
+
+# we want to keep the order in the plot, so we use a factor for country
+pew_ger <- arrange(pew_ger, desc(diff))
+pew_ger$issue_recode <- factor(pew_ger$issue_recode, levels=rev(pew_ger$issue_recode))
+
+# plot
+policygap_ger <- ggplot()+ 
+  geom_segment(data=pew_ger, aes(y=issue_recode, yend=issue_recode, 
+                                             x=0, xend=0.3), color="#b2b2b2", size=0.15) +
+  geom_dumbbell(data=pew_ger, aes(y=issue_recode, x=PRRV, xend=nonPRRV),
+                         color="#b2b2b2", size=1.5, colour_x = "darkred", 
+                         colour_xend = "black", size_x = 1.5, size_xend = 1.5) +
+  geom_text(data=filter(pew_ger, issue_recode=="Living costs"),
+                     aes(x=nonPRRV, y=issue_recode, label=""),
+                     color="black", size=2, vjust=-1.5, fontface="bold") + 
+  geom_text(data=filter(pew_ger, issue_recode=="Living costs"),
+                     aes(x=PRRV, y=issue_recode, label=""),
+                     color="darkred", size=2, vjust=-1.5, fontface="bold") +
+  geom_text(data=pew_ger, aes(x=nonPRRV, y=issue_recode, label=percent_first(nonPRRV)),
+                     color="black", size=2, vjust=2.5) + 
+  geom_text(data=pew_ger, color="darkred", size=2, vjust=2.5, aes(x=PRRV, y=issue_recode,                                              label=percent_first(PRRV))) +
+  labs(x="Percent", y=NULL, title="Germany: Most important issue gap", subtitle="", caption="") + 
+  theme_bw() +
+  theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=8)) +
+  theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank())
+
+
+# France
+pew_fr <- df %>% filter(country.x=="France") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  select(issue_recode, group) %>% 
+  group_by(group, issue_recode) %>% 
+  summarise(count=n()) %>% 
+  mutate(perc=(count/sum(count))*100) %>% 
+  select(-count)
+
+pew_fr <- spread(pew_fr, "group", "perc")
+pew_fr$nonPRRV <- pew_fr$`non-PRRV`
+pew_fr$`non-PRRV` <- NULL
+pew_fr$diff <- sprintf("%d", as.integer((pew_fr$PRRV-pew_fr$nonPRRV)))
+
+# we want to keep the order in the plot, so we use a factor for country
+pew_fr <- arrange(pew_fr, desc(diff))
+pew_fr$issue_recode <- factor(pew_fr$issue_recode, levels=rev(pew_fr$issue_recode))
+
+# plot
+policygap_fr <- ggplot()+ 
+  geom_segment(data=pew_fr, aes(y=issue_recode, yend=issue_recode, 
+                                             x=0, xend=0.3), color="#b2b2b2", size=0.15) +
+  geom_dumbbell(data=pew_fr, aes(y=issue_recode, x=PRRV, xend=nonPRRV),
+                         color="#b2b2b2", size=1.5, colour_x = "darkred", 
+                         colour_xend = "black", size_x = 1.5, size_xend = 1.5) +
+  geom_text(data=filter(pew_fr, issue_recode=="Living costs"),
+                     aes(x=nonPRRV, y=issue_recode, label=""),
+                     color="black", size=2, vjust=-1.5, fontface="bold") + 
+  geom_text(data=filter(pew_fr, issue_recode=="Living costs"),
+                     aes(x=PRRV, y=issue_recode, label=""),
+                     color="darkred", size=2, vjust=-1.5, fontface="bold") +
+  geom_text(data=pew_fr, aes(x=nonPRRV, y=issue_recode, label=percent_first(nonPRRV)),
+                     color="black", size=2, vjust=2.5) + 
+  geom_text(data=pew_fr, color="darkred", size=2, vjust=2.5, aes(x=PRRV, y=issue_recode,                                              label=percent_first(PRRV))) +
+  labs(x="Percent", y=NULL, title="France: Most important issue gap", subtitle="", caption="") + 
+  theme_bw() +
+  theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=8)) +
+  theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank())
+
+# Italy
+pew_it <- df %>% filter(country.x=="Italy") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>% 
+  select(issue_recode, group) %>% 
+  group_by(group, issue_recode) %>% 
+  summarise(count=n()) %>% 
+  mutate(perc=(count/sum(count))*100) %>% 
+  select(-count)
+
+pew_it <- spread(pew_it, "group", "perc")
+pew_it$nonPRRV <- pew_it$`non-PRRV`
+pew_it$`non-PRRV` <- NULL
+pew_it$diff <- sprintf("%d", as.integer((pew_it$PRRV-pew_it$nonPRRV)))
+
+# we want to keep the order in the plot, so we use a factor for country
+pew_it <- arrange(pew_it, desc(diff))
+pew_it$issue_recode <- factor(pew_it$issue_recode, levels=rev(pew_it$issue_recode))
+
+# plot
+policygap_it <- ggplot()+ 
+  geom_segment(data=pew_it, aes(y=issue_recode, yend=issue_recode, 
+                                             x=0, xend=0.3), color="#b2b2b2", size=0.15) +
+  geom_dumbbell(data=pew_it, aes(y=issue_recode, x=PRRV, xend=nonPRRV),
+                         color="#b2b2b2", size=1.5, colour_x = "darkred", 
+                         colour_xend = "black", size_x = 1.5, size_xend = 1.5) +
+  geom_text(data=filter(pew_it, issue_recode=="Living costs"),
+                     aes(x=nonPRRV, y=issue_recode, label=""),
+                     color="black", size=2, vjust=-1.5, fontface="bold") + 
+  geom_text(data=filter(pew_it, issue_recode=="Living costs"),
+                     aes(x=PRRV, y=issue_recode, label=""),
+                     color="darkred", size=2, vjust=-1.5, fontface="bold") +
+  geom_text(data=pew_it, aes(x=nonPRRV, y=issue_recode, label=percent_first(nonPRRV)),
+                     color="black", size=2, vjust=2.5) + 
+  geom_text(data=pew_it, color="darkred", size=2, vjust=2.5, aes(x=PRRV, y=issue_recode,                                              label=percent_first(PRRV))) +
+  labs(x="Percent", y=NULL, title="Italy: Most important issue gap", subtitle="", caption="") + 
+  theme_bw() +
+  theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=8)) +
+  theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank())
+
+
+# Spain
+pew_es <- df %>% filter(country.x=="Spain") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>% 
+  select(issue_recode, group) %>% 
+  group_by(group, issue_recode) %>% 
+  summarise(count=n()) %>% 
+  mutate(perc=(count/sum(count))*100) %>% 
+  select(-count)
+
+pew_es <- spread(pew_es, "group", "perc")
+pew_es$nonPRRV <- pew_es$`non-PRRV`
+pew_es$`non-PRRV` <- NULL
+pew_es$diff <- sprintf("%d", as.integer((pew_es$PRRV-pew_es$nonPRRV)))
+
+# we want to keep the order in the plot, so we use a factor for country
+pew_es <- arrange(pew_es, desc(diff))
+pew_es$issue_recode <- factor(pew_es$issue_recode, levels=rev(pew_es$issue_recode))
+
+# plot
+policygap_es <- ggplot()+ 
+  geom_segment(data=pew_es, aes(y=issue_recode, yend=issue_recode, 
+                                             x=0, xend=0.3), color="#b2b2b2", size=0.15) +
+  geom_dumbbell(data=pew_es, aes(y=issue_recode, x=PRRV, xend=nonPRRV),
+                         color="#b2b2b2", size=1.5, colour_x = "darkred", 
+                         colour_xend = "black", size_x = 1.5, size_xend = 1.5) +
+  geom_text(data=filter(pew_es, issue_recode=="Living costs"),
+                     aes(x=nonPRRV, y=issue_recode, label=""),
+                     color="black", size=2, vjust=-1.5, fontface="bold") + 
+  geom_text(data=filter(pew_es, issue_recode=="Living costs"),
+                     aes(x=PRRV, y=issue_recode, label=""),
+                     color="darkred", size=2, vjust=-1.5, fontface="bold") +
+  geom_text(data=pew_es, aes(x=nonPRRV, y=issue_recode, label=percent_first(nonPRRV)),
+                     color="black", size=2, vjust=2.5) + 
+  geom_text(data=pew_es, color="darkred", size=2, vjust=2.5, aes(x=PRRV, y=issue_recode,                                              label=percent_first(PRRV))) +
+  labs(x="Percent", y=NULL, title="Italy: Most important issue gap", subtitle="", caption="") + 
+  theme_bw() +
+  theme(axis.text = element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=8)) +
+  theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank())
+
+library(ggpubr)
+ggarrange(policygap_ger, policygap_fr, policygap_it, policygap_es, ncol = 2, nrow = 2)
+
+```
+
 
 ```{r Figure 1 PRRV vs nonPRRV and most important issue by COUNTRY}
 
 # France: PRRV vs nonPRRV
-fr_issue <- df %>% filter(country.x=="France") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+fr_issue <- df %>% filter(country.x=="France") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
   group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
@@ -218,14 +393,15 @@ fr_issue <- df %>% filter(country.x=="France") %>% filter(!is.na(issue_recode) &
   theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
   labs(title="France", x="", y="Percent") + 
-  scale_fill_manual(values=c("red", "#666666")) +
+  scale_fill_manual(values=c("Darkred", "#666666")) +
   theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
         title=element_text(size=8))
 
 # Most important issue facing the country
 
 # Italy: PRRV vs nonPRRV
-it_issue <- df %>% filter(country.x=="Italy") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+it_issue <- df %>% filter(country.x=="Italy") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
   group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
@@ -236,13 +412,14 @@ it_issue <- df %>% filter(country.x=="Italy") %>% filter(!is.na(issue_recode) & 
   theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
   labs(title="Italy", x="", y="") + 
-  scale_fill_manual(values=c("red", "#666666")) +
+  scale_fill_manual(values=c("Darkred", "#666666")) +
   theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
         title=element_text(size=8))
 
 
 # Germany: PRRV vs nonPRRV
-ger_issue <- df %>% filter(country.x=="Germany") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+ger_issue <- df %>% filter(country.x=="Germany") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
   group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
@@ -253,13 +430,14 @@ ger_issue <- df %>% filter(country.x=="Germany") %>% filter(!is.na(issue_recode)
         legend.position = "none") +
   facet_wrap(~group, scales="free_x") +
   labs(title="Germany", x="", y="Percent") + 
-  scale_fill_manual(values = c("red", "#666666")) +
+  scale_fill_manual(values = c("Darkred", "#666666")) +
   theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
         title=element_text(size=8))
 
 
 # Spain: PRRV vs nonPRRV
-spain_issue <- df %>% filter(country.x=="Spain") %>% filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+spain_issue <- df %>% filter(country.x=="Spain") %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
   group_by(group, issue_recode) %>% 
   summarise(count=n()) %>%
   mutate(perc=count/sum(count)) %>% 
@@ -270,11 +448,10 @@ spain_issue <- df %>% filter(country.x=="Spain") %>% filter(!is.na(issue_recode)
   theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
   facet_wrap(~group, scales="free_x") +
   labs(title="Spain", x="", y="") + 
-  scale_fill_manual(values=c("red", "#666666")) +
+  scale_fill_manual(values=c("Darkred", "#666666")) +
   theme(axis.text = element_text(size=6), axis.title = element_text(size=8),
         title=element_text(size=8))
 
-library(ggpubr)
 ggarrange(fr_issue, it_issue, ger_issue, spain_issue, ncol = 2, nrow = 2)
 
 
@@ -382,7 +559,24 @@ ggplot(combined, aes(estimate, level, colour=Voters)) +
 
 ```
 
-# Testing Pre-registered Hypothesis about The Limist of Issue Frustration
+## Conjoint Plots by Country
+
+The plots illustrate marginal means for PRVV and nonPRRV voters by country.
+
+```{r MM by country on a single plot, fig.width=15, fig.height=6}
+
+allprrv <- conjoint %>% filter(group == "PRRV")
+allnonprrv <- conjoint %>% filter(group == "nonPRVV")
+
+p_allprrv <- plot(cj(allprrv, selected ~ imm + soc + climate + eu + run, id = ~ panelist_id, by = ~ country, estimate = "mm"), group = "BY", vline = 0.5) + ggtitle("PRRV")
+
+p_allnonprrv <- plot(cj(allnonprrv, selected ~ imm + soc + climate + eu + run, id = ~ panelist_id, by = ~ country, estimate = "mm"), group = "BY", vline = 0.5) + ggtitle("nonPRRV")
+
+gridExtra::grid.arrange(p_allprrv, p_allnonprrv, ncol=2)
+
+```
+
+# Testing Pre-registered Hypothesis from PAP about The Limist of Issue Frustration
 
 ```{r, Subsetting profiles with PRR position on immigration}
 
@@ -391,7 +585,7 @@ conjoint$num_imm <- as.numeric(conjoint$imm) # numerical imm
 # only tasks with PRR imm position:
 dtimm <- conjoint %>% group_by(panelist_id, task) %>% filter(1 %in% num_imm)
 
-# but we don't need tasks, where both profiles proposed PRR imm measure, so let's remove them:
+# we don't need tasks, where both profiles proposed PRR imm measure, so let's remove it:
 dtimm <- dtimm %>% group_by(panelist_id, task) %>% filter(sum(num_imm) > 2)
 
 # drop tasks, where a panelist had to choose between profile with PRR and Left imm position, because Left imm position is as strong trigger too (see plots from the preliminary analysis)
@@ -503,8 +697,20 @@ ggplot(imm4_coefdt, aes(x=n_left, y=estimate)) +
 # Numerical results
 
 ```{r, numerical results}
+
+# PRRV
 print(xtable::xtable(
-  cj(dtimm_left3, 
+  cj(allprrv, 
+     selected ~ imm + soc + climate + eu + run,
+     id = ~ panelist_id,
+     estimate = "mm",
+     h0 = 0.5)[c("feature", "level", "estimate", "std.error", "z")],
+     digits = 2, align = c("l", "l", "p{3in}", "r", "r", "r")), include.rownames = FALSE,
+     comment=FALSE, size = "footnotesize")
+
+# nonPRRV
+print(xtable::xtable(
+  cj(allnonprrv, 
      selected ~ imm + soc + climate + eu + run,
      id = ~ panelist_id,
      estimate = "mm",
