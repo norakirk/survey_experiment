@@ -1,0 +1,467 @@
+---
+title: "Preliminary Conjoint Analysis"
+author: "Nora Kirkizh and Sebastian Stier"
+date: "01/04/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, include=FALSE}
+
+rm(list=ls())
+
+library(tidyverse)
+library(jtools)
+library(rio)
+library(cregg)
+library(ggplot2)
+library(gridExtra)
+library(expss)
+library(tidyr)
+library(data.table)
+requireNamespace("xtable", quietly = TRUE)
+# load data
+conjoint <- cj_df(rio::import("../Output/conjoint_plotting_data.RData"))
+conjoint[, 2:16] <- NULL
+
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width=13, fig.height=5, message=FALSE, warning=FALSE)
+```
+
+## Introduction
+
+This is an R Markdown report on preliminary analysis of conjoint survey experiment output. The conjoint survey experiment aimed to test hypotheses on populist radical right voters policy preferences. Voters were asked to evaluate eight pairs of profiles of candidates for a parliament seat in a corresponding country. Voters from France, italy, Spain, and Germany took part in the survey experiment or 1951 voters in total, whcih resulted in 31216 evaluated candidate rofiles. We are adopting the code from <https://github.com/leeper/conjoint-subgroups>. Plots by party identification, country of residence, and other political attitudes and sociodemographic background features can be found here.
+
+## AMCE vs. Marginal Means
+
+AMCE against marginal means based on pooled data meaning for all countries and voters combined.
+
+```{r AMCE vs MM pooled data plots, echo=FALSE}
+
+# AMCE plot with pooled data
+p1 <- plot(
+  cregg::cj(
+    conjoint, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "amce"
+  ), vline = 0
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(-0.4, 0.4), 
+    breaks = c(-0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = ifelse(is.na(std.error), "", sprintf("%0.2f (%0.2f)", estimate, std.error))),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("All voters")
+
+
+# MM plot with pooled data
+p2 <- plot(
+  cregg::cj(
+    conjoint, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("All voters")
+
+# place plots next to each other for comparison
+gridExtra::grid.arrange(p1, p2, ncol=2)
+```
+
+## Plots by group: all countries
+
+```{r Plots by group, echo=FALSE}
+
+# MM plot with PRRV
+PRRV <- conjoint[conjoint$group == "PRRV",]
+
+p_prrv <- plot(
+  cregg::cj(
+    PRRV, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("Populist radical right")
+
+
+# MM plot with nonPRRV
+nonPRRV <- conjoint[conjoint$group == "nonPRVV",]
+
+p_nonprrv <- plot(
+  cregg::cj(
+    nonPRRV, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("non-Populist radical right")
+
+
+gridExtra::grid.arrange(p_prrv, p_nonprrv, ncol=2)
+
+```
+
+## Plots by Country
+
+The plots illustrate marginal means for PRVV and nonPRRV voters by country.
+
+```{r MM by country on a single plot, fig.width=15, fig.height=6}
+
+allprrv <- conjoint %>% filter(group == "PRRV")
+allnonprrv <- conjoint %>% filter(group == "nonPRVV")
+
+p_allprrv <- plot(cj(allprrv, selected ~ imm + soc + climate + eu + run, id = ~ panelist_id, by = ~ country, estimate = "mm"), group = "BY", vline = 0.5) + ggtitle("Populist radical right")
+
+p_allnonprrv <- plot(cj(allnonprrv, selected ~ imm + soc + climate + eu + run, id = ~ panelist_id, by = ~ country, estimate = "mm"), group = "BY", vline = 0.5) + ggtitle("non-Populist radical right")
+
+gridExtra::grid.arrange(p_allprrv, p_allnonprrv, ncol=2)
+
+```
+
+#### Germany
+
+```{r plots with germany, echo=FALSE, error=FALSE}
+
+# MM plot with German PRRV 
+ger_prrv <- conjoint %>% filter(group == "PRRV" & country == "Germany")
+
+p_ger_prrv <- plot(
+  cregg::cj(
+    ger_prrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("AfD")
+
+# MM plot with German nonPRRV
+ger_nonprrv <- conjoint %>% filter(group == "nonPRVV" & country == "Germany")
+
+p_ger_nonprrv <- plot(
+  cregg::cj(
+    ger_nonprrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("All other voters")
+
+gridExtra::grid.arrange(p_ger_prrv, p_ger_nonprrv, ncol=2)
+
+```
+
+#### France
+
+```{r France, }
+
+# subset PRRV and nonPRRV
+fr_prrv <- conjoint %>% filter(group == "PRRV" & country == "France")
+fr_nonprrv <- conjoint %>% filter(group == "nonPRVV" & country == "France")
+
+# MM with French PRRV
+p_fr_prrv <- plot(
+  cregg::cj(
+    fr_prrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("RN, Marine Le Pen")
+
+# MM plot with France nonPRRV
+p_fr_nonprrv <- plot(
+  cregg::cj(
+    fr_nonprrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("All other voters")
+
+gridExtra::grid.arrange(p_fr_prrv, p_fr_nonprrv, ncol=2)
+
+```
+
+#### Italy
+
+```{r Italy, }
+
+# subset PRRV and nonPRRV
+it_prrv <- conjoint %>% filter(group == "PRRV" & country == "Italy")
+it_nonprrv <- conjoint %>% filter(group == "nonPRVV" & country == "Italy")
+
+# MM with Italian PRRV
+p_it_prrv <- plot(
+  cregg::cj(
+    it_prrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("Lega Nord, FdI")
+
+# MM plot with Italian nonPRRV
+p_it_nonprrv <- plot(
+  cregg::cj(
+    it_nonprrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("All other voters")
+
+gridExtra::grid.arrange(p_it_prrv, p_it_nonprrv, ncol=2)
+
+```
+
+
+#### Spain
+
+```{r Spain, }
+
+# subset PRRV and nonPRRV
+es_prrv <- conjoint %>% filter(group == "PRRV" & country == "Spain")
+es_nonprrv <- conjoint %>% filter(group == "nonPRVV" & country == "Spain")
+
+# MM with Spain PRRV
+p_es_prrv <- plot(
+  cregg::cj(
+    es_prrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("Vox")
+
+# MM plot with Spain nonPRRV
+p_es_nonprrv <- plot(
+  cregg::cj(
+    es_nonprrv, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm"
+  ), vline = 0.5
+) + 
+  ggplot2::scale_x_continuous(
+    limits = c(0.1, 0.9), 
+    breaks = c(0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  ) + 
+  ggplot2::geom_text(
+    aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)),
+    colour = "black", 
+    size = 2,
+    position = position_nudge(y = .5)
+  ) + 
+  theme(legend.position="none") + ggtitle("All other voters")
+
+gridExtra::grid.arrange(p_es_prrv, p_es_nonprrv, ncol=2)
+
+```
+
+```{r list of parties in the sample, }
+
+df_parties <- conjoint %>% select(partyidcloseW1.x, country.x) %>% 
+  group_by(country.x, partyidcloseW1.x) %>% 
+  summarise(count=n())
+
+print(xtable::xtable(df_parties))
+
+# library(kableExtra)
+# library(magrittr)
+# kable(df_parties, "html") %>%
+  # kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  # cat(., file = "parties.html")
+
+
+
+```
+
+```{r recoding parties according to PopuList, }
+
+library(plyr)
+
+conjoint$partyID_type <- revalue(conjoint$partyidcloseW1, c(
+  # mainstream
+  "La République En Marche!" = "mainstream",
+  "Génération.s, le mouvement" = "mainstream",
+  "Les Républicains" = "mainstream",
+  "CDU/CSU" = "mainstream",
+  "SPD" = "mainstream",
+  "FDP" = "mainstream",
+  "+Europa / Radicali" = "mainstream",
+  "Partito Democratico (PD)" = "mainstream",
+  # "Unione di Centro" = "mainstream" # not in the list but we had one person for it anyway
+  "PP" = "mainstream",
+  "PSOE" = "mainstream",
+  # right-wing populist parties (or far-right?)
+  "AfD" = "right-wing populist", 
+  "Rassemblement national" = "right-wing populist",
+  # "Marine Le Pen" = "right-wing populist",
+  "Lega" = "right wing populist",
+  "Fratelli d'Italia" ="right-wing populist", 
+  "VOX" = "right-wing populist",
+  "Debout la France" = "right-wing populist",
+  # left-wing populist
+  "La France Insoumise" = "left-wing populist",
+  "Compromís" = "left-wing populist",
+  "En Comú Podem" = "left-wing populist",
+  "Linke" = "left-wing populist",
+  "Podemos" = "left-wing populist",
+  # populist
+  "Forza Italia" = "populist",
+  "Gilets Jaunes" = "populist",
+  "Movimento 5 Stelle" = "populist",
+  "Potere al Popolo (PaP)" = "populist",
+  # left-wing
+  "EH Bildu" = "left-wing",
+  "En Marea" = "left-wing",
+  "ERC" = "left-wing",
+  "Foro Asturias" = "left-wing",
+  "IU" = "left-wing",
+  "Liberi e Uguali (LEU)" = "left-wing",
+  # centre-left
+  "Europe Écologie Les Verts" = "centre-left",
+  "Grüne" = "centre-left",
+  "Mouvement radical" = "centre-left",
+  "Parti socialiste" = "centre-left",
+  # centre-right
+  "EAJ-PNV" = "centre-right",
+  "Ciudadanos" = "centre-right",
+  "Agir, la droite constructive" = "centre-right",
+  # right
+  "La Destra" = "right",
+  # centre
+  "Mouvement démocrate" = "centre",
+  "PDeCAT" = "centre",
+  "Union des démocrates et indépendants" = "centre"))
+
+
+conjoint$partyvoteW2_type <- revalue(partyvoteW2_chr, c(
+  
+  
+))
+
+```
+
+
