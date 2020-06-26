@@ -54,7 +54,7 @@ df$issue_recode <- revalue(df$issuesfirstW1, c(
 df$group <- revalue(df$group, c("nonPRVV"="non-PRRV"))
 
 # de install plyr package
-remove.packages("plyr")
+# remove.packages("plyr")
 
 # All countries Wave 1: PRRV vs non PRRV
 mi_issue <- df %>% 
@@ -568,8 +568,10 @@ The plots illustrate marginal means for PRVV and nonPRRV voters by country.
 allprrv <- conjoint %>% filter(group == "PRRV")
 allnonprrv <- conjoint %>% filter(group == "nonPRVV")
 
+# PRRV
 p_allprrv <- plot(cj(allprrv, selected ~ imm + soc + climate + eu + run, id = ~ panelist_id, by = ~ country, estimate = "mm"), group = "BY", vline = 0.5) + ggtitle("PRRV")
 
+# nonPRRV
 p_allnonprrv <- plot(cj(allnonprrv, selected ~ imm + soc + climate + eu + run, id = ~ panelist_id, by = ~ country, estimate = "mm"), group = "BY", vline = 0.5) + ggtitle("nonPRRV")
 
 gridExtra::grid.arrange(p_allprrv, p_allnonprrv, ncol=2)
@@ -719,3 +721,5 @@ print(xtable::xtable(
      comment=FALSE, size = "footnotesize")
 
 ```
+
+
