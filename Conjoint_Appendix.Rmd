@@ -523,13 +523,11 @@ result <- cregg::cj(
     id = ~ panelist_id,
     estimate = "mm")
 
-
 nonprrv <- cregg::cj(
     nonPRRV, 
     selected ~ imm + soc + climate + eu + run,
     id = ~ panelist_id,
     estimate = "mm")
-
 
 result_df <- data.frame(result)
 result_df$Voters <- rep("PRRV")

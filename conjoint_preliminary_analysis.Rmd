@@ -20,6 +20,8 @@ library(gridExtra)
 library(expss)
 library(tidyr)
 library(data.table)
+library(plyr)
+
 requireNamespace("xtable", quietly = TRUE)
 # load data
 conjoint <- cj_df(rio::import("../Output/conjoint_plotting_data.RData"))
@@ -399,27 +401,24 @@ print(xtable::xtable(df_parties))
 
 ```{r recoding parties according to PopuList, }
 
-library(plyr)
-
 conjoint$partyID_type <- revalue(conjoint$partyidcloseW1, c(
   # mainstream
-  "La République En Marche!" = "mainstream",
   "Génération.s, le mouvement" = "mainstream",
-  "Les Républicains" = "mainstream",
-  "CDU/CSU" = "mainstream",
   "SPD" = "mainstream",
   "FDP" = "mainstream",
-  "+Europa / Radicali" = "mainstream",
   "Partito Democratico (PD)" = "mainstream",
-  # "Unione di Centro" = "mainstream" # not in the list but we had one person for it anyway
-  "PP" = "mainstream",
   "PSOE" = "mainstream",
+  # mainstream right
+  "La République En Marche!" = "mainstream right",
+  "Les Républicains" = "mainstream right",
+  "CDU/CSU" = "mainstream right",
+  "+Europa / Radicali" = "mainstream right",
+  "PP" = "mainstream right",
   # right-wing populist parties (or far-right?)
   "AfD" = "right-wing populist", 
   "Rassemblement national" = "right-wing populist",
-  # "Marine Le Pen" = "right-wing populist",
-  "Lega" = "right wing populist",
-  "Fratelli d'Italia" ="right-wing populist", 
+  "Lega" = "right-wing populist",
+  "Fratelli d'Italia" = "right-wing populist", 
   "VOX" = "right-wing populist",
   "Debout la France" = "right-wing populist",
   # left-wing populist
@@ -457,10 +456,368 @@ conjoint$partyID_type <- revalue(conjoint$partyidcloseW1, c(
   "Union des démocrates et indépendants" = "centre"))
 
 
-conjoint$partyvoteW2_type <- revalue(partyvoteW2_chr, c(
-  
-  
-))
+conjoint$partyvoteW2_type <- revalue(conjoint$partyvoteW2_chr, c(
+  # mainstream
+  "Benoit Hamon" = "mainstream",
+  "SPD" = "mainstream",
+  "FDP" = "mainstream",
+  "Partito Democratico (PD)" = "mainstream",
+  "PSOE" = "mainstream",
+  # mainstream right
+  "Emmanuel Macron" = "mainstream right",
+  "Francois Fillon" = "mainstream right",
+  "CDU/CSU" = "mainstream right",
+  "+Europa / Radicali" = "mainstream right",
+  "PP" = "mainstream right",
+  "Unione di Centro / Noi con l'Italia" = "mainstream right",
+  # right-wing populist parties (or far-right?)
+  "AfD" = "right-wing populist", 
+  "Marine Le Pen" = "right-wing populist",
+  "Lega" = "right-wing populist",
+  "Fratelli d'Italia" ="right-wing populist", 
+  "VOX" = "right-wing populist",
+  "Nicolas Dupont-Aignan" = "right-wing populist",
+  # left-wing populist
+  "Jean-Luc Melenchon" = "left-wing populist",
+  "Compromis" = "left-wing populist",
+  "En Comu Podem" = "left-wing populist",
+  "Linke" = "left-wing populist",
+  "Podemos" = "left-wing populist",
+  # populist
+  "Forza Italia" = "populist",
+  "Movimento 5 Stelle" = "populist",
+  "Potere al Popolo" = "populist",
+  # left-wing
+  "EH Bildu" = "left-wing",
+  "ERC" = "left-wing",
+  "Liberi e Uguali" = "left-wing",
+  # centre-left
+  "Grüne" = "centre-left",
+  "PACMA" = "centre-left",
+  # centre-right
+  "EAJ-PNV" = "centre-right",
+  "Ciudadanos" = "centre-right",
+  # right
+  "La Destra" = "right",
+  # centre
+  "PDeCAT" = "centre"))
+
+
+conjoint$eupartyIDw1_type <- revalue(conjoint$eucomingvotepartyW1, c(
+  # mainstream
+  "Génération.s, le mouvement" = "mainstream",
+  "SPD" = "mainstream",
+  "FDP" = "mainstream",
+  "Partito Democratico (PD)" = "mainstream",
+  "PSOE" = "mainstream",
+  # mainstream right
+  "La République En Marche!" = "mainstream right",
+  "Les Républicains" = "mainstream right",
+  "CDU/CSU" = "mainstream right",
+  "+Europa / Radicali" = "mainstream right",
+  "PP" = "mainstream right",
+  # "Unione di Centro / Noi con l'Italia" = "mainstream right",
+  # right-wing populist parties (or far-right?)
+  "AfD" = "right-wing populist", 
+  "Rassemblement national" = "right-wing populist",
+  "Lega" = "right-wing populist",
+  "Fratelli d'Italia" ="right-wing populist", 
+  "VOX" = "right-wing populist",
+  "Debout la France" = "right-wing populist",
+  # left-wing populist
+  "La France Insoumise" = "left-wing populist",
+  "Compromís" = "left-wing populist",
+  "En Comú Podem" = "left-wing populist",
+  "Linke" = "left-wing populist",
+  "Podemos" = "left-wing populist",
+  # populist
+  "Forza Italia" = "populist",
+  "Gilets Jaunes" = "populist",
+  "Movimento 5 Stelle" = "populist",
+  "Potere al Popolo (PaP)" = "populist",
+  # left-wing
+  "EH Bildu" = "left-wing",
+  "En Marea" = "left-wing",
+  "ERC" = "left-wing",
+  # "Foro Asturias" = "left-wing",
+  "IU" = "left-wing",
+  "Liberi e Uguali (LEU)" = "left-wing",
+  # centre-left
+  "Europe Écologie Les Verts" = "centre-left",
+  "Grüne" = "centre-left",
+  "Mouvement radical" = "centre-left",
+  "Parti socialiste" = "centre-left",
+  # centre-right
+  "EAJ-PNV" = "centre-right",
+  "Ciudadanos" = "centre-right",
+  # "Agir, la droite constructive" = "centre-right",
+  # right
+  "La Destra" = "right",
+  # centre
+  "Mouvement démocrate" = "centre",
+  "PDeCAT" = "centre",
+  "Union des démocrates et indépendants" = "centre"))
+
+
+conjoint$eupartyIDw2_type <- revalue(conjoint$eupostvotepartyW2, c(
+  # mainstream
+  "Génération.s, le mouvement" = "mainstream",
+  "SPD" = "mainstream",
+  "FDP" = "mainstream",
+  "Partito Democratico (PD)" = "mainstream",
+  "PSOE" = "mainstream",
+  # mainstream right
+  "La République En Marche!" = "mainstream right",
+  "Les Républicains" = "mainstream right",
+  "CDU/CSU" = "mainstream right",
+  "+Europa / Radicali" = "mainstream right",
+  "PP" = "mainstream right",
+  # "Unione di Centro / Noi con l'Italia" = "mainstream right",
+  # right-wing populist parties (or far-right?)
+  "AfD" = "right-wing populist", 
+  "Rassemblement national" = "right-wing populist",
+  "Lega" = "right-wing populist",
+  "Fratelli d'Italia" ="right-wing populist", 
+  "VOX" = "right-wing populist",
+  "Debout la France" = "right-wing populist",
+  # left-wing populist
+  "La France Insoumise" = "left-wing populist",
+  "Compromís" = "left-wing populist",
+  "En Comú Podem" = "left-wing populist",
+  "Linke" = "left-wing populist",
+  "Podemos" = "left-wing populist",
+  # populist
+  "Forza Italia" = "populist",
+  "Gilets Jaunes" = "populist",
+  "Movimento 5 Stelle" = "populist",
+  "Potere al Popolo (PaP)" = "populist",
+  # left-wing
+  "EH Bildu" = "left-wing",
+  "ERC" = "left-wing",
+  "IU" = "left-wing",
+  "Liberi e Uguali (LEU)" = "left-wing",
+  # centre-left
+  "Europe Écologie Les Verts" = "centre-left",
+  "Grüne" = "centre-left",
+  "Place Publique" = "centre-left",
+  "Parti socialiste" = "centre-left",
+  # centre-right
+  "EAJ-PNV" = "centre-right",
+  "Ciudadanos" = "centre-right",
+  "Agir, la droite constructive" = "centre-right",
+  # right
+  "La Destra" = "right",
+  # centre
+  "PDeCAT" = "centre",
+  "Union des démocrates et indépendants" = "centre"))
+
+
+conjoint$partyIDcjnt_type <- revalue(conjoint$partyidclose_cjnt, c(
+  # mainstream
+  "Génération.s, le mouvement" = "mainstream",
+  "SPD" = "mainstream",
+  "FDP" = "mainstream",
+  "Partito Democratico (PD)" = "mainstream",
+  "PSOE" = "mainstream",
+  # mainstream right
+  "La République En Marche!" = "mainstream right",
+  "Les Républicains" = "mainstream right",
+  "CDU/CSU" = "mainstream right",
+  "+Europa / Radicali" = "mainstream right",
+  "PP" = "mainstream right",
+  "Unione di Centro / Noi con l'Italia" = "mainstream right",
+  # right-wing populist parties (or far-right?)
+  "AfD" = "right-wing populist", 
+  "Rassemblement national" = "right-wing populist",
+  "Lega" = "right-wing populist",
+  "Fratelli d'Italia" ="right-wing populist", 
+  "VOX" = "right-wing populist",
+  "Debout la France" = "right-wing populist",
+  # left-wing populist
+  "La France Insoumise" = "left-wing populist",
+  "Compromís" = "left-wing populist",
+  "En Comú Podem" = "left-wing populist",
+  "Linke" = "left-wing populist",
+  "Podemos" = "left-wing populist",
+  # populist
+  "Forza Italia" = "populist",
+  "Movimento 5 Stelle" = "populist",
+  "Potere al Popolo" = "populist",
+  # left-wing
+  "EH Bildu" = "left-wing",
+  "En Marea" = "left-wing",
+  "ERC" = "left-wing",
+  "IU" = "left-wing",
+  "Liberi e Uguali" = "left-wing",
+  # centre-left
+  "Europe Écologie Les Verts" = "centre-left",
+  "Grüne" = "centre-left",
+  "Mouvement radical" = "centre-left",
+  "Parti socialiste" = "centre-left",
+  "Place Publique" = "centre-left",
+  # centre-right
+  "EAJ-PNV" = "centre-right",
+  "Ciudadanos" = "centre-right",
+  "Agir, la droite constructive" = "centre-right",
+  # right
+  "La Destra" = "right",
+  # centre
+  "Mouvement démocrate" = "centre",
+  "PDeCAT" = "centre"
+  ))
+
+```
+
+```{r testing hypotheses with: prr vs lrr different samples, }
+
+rw_populist <- conjoint %>% 
+  rowwise() %>% 
+  filter(any(c(partyID_type, partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type,
+               partyIDcjnt_type) %in% c("right-wing populist"))) %>% 
+  select(country, panelist_id, imm, soc, climate, eu, run, selected, partyID_type,
+         partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type, partyIDcjnt_type)
+
+lw_populist <- conjoint %>% 
+  rowwise() %>% 
+  filter(any(c(partyID_type, partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type,
+               partyIDcjnt_type) %in% c("left-wing populist"))) %>% 
+  select(country, panelist_id, imm, soc, climate, eu, run, selected, partyID_type,
+         partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type, partyIDcjnt_type)
+
+
+lw_populist <- anti_join(lw_populist, rw_populist)
+
+
+rwp_result <- cregg::cj(
+    rw_populist, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm")
+
+lwp_result <- cregg::cj(
+    lw_populist, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm")
+
+
+rwp_result <- data.frame(rwp_result)
+rwp_result$Voters <- rep("right-wing populist")
+lwp_result <- data.frame(lwp_result)
+lwp_result$Voters <- rep("left-wing populist")
+combined_rlwp <- rbind(rwp_result, lwp_result)
+
+ggplot(combined_rlwp, aes(estimate, level, colour=Voters)) +
+  geom_point() + 
+  geom_errorbarh(data = combined_rlwp, mapping=aes(y=level, xmax=lower, xmin=upper), 
+                 height=0, size=0.5) + 
+  geom_text(aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)), size = 1.5, 
+            position = position_nudge(y = 0.4)) +
+  scale_x_continuous(limits=c(0.25, 0.75)) +
+  facet_wrap(~feature, scales="free_y", ncol=1) +
+  geom_vline(xintercept = 0.5, linetype="solid", color = "black", size=0.2) +
+  annotate("rect", xmin = 0.4, xmax = 0.6, ymin = -Inf, ymax = Inf, 
+           fill = "black", alpha = 0.1, color = NA) +
+  ggtitle("") +
+  theme_bw() + 
+  ylab("") + 
+  xlab("Pr(Choosing a candidate)") +
+  theme(axis.text=element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=10)) +
+  scale_color_manual(values = c("#999999", "#000000"))
+
+```
+
+```{r rw populist and left-wing populist vs. all others, }
+
+
+lr_populist <- conjoint %>% rowwise() %>% 
+  filter(any(c(partyID_type, partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type,
+               partyIDcjnt_type) %in% c("right-wing populist", "left-wing populist"))) %>% 
+  select(country, panelist_id, imm, soc, climate, eu, run, selected, partyID_type,
+         partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type, partyIDcjnt_type)
+
+others <- anti_join(conjoint, lr_populist)
+
+rl_result <- cregg::cj(
+    lr_populist, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm")
+
+others_result <- cregg::cj(
+    others, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm")
+
+rl_result <- data.frame(rl_result)
+rl_result$Voters <- rep("left- and right-wing populist")
+others_result <- data.frame(others_result)
+others_result$Voters <- rep("others")
+combined_rlo <- rbind(rl_result, others_result)
+
+ggplot(combined_rlo, aes(estimate, level, colour=Voters)) +
+  geom_point() + 
+  geom_errorbarh(data = combined_rlo, mapping=aes(y=level, xmax=lower, xmin=upper), 
+                 height=0, size=0.5) + 
+  geom_text(aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)), size = 1.5, 
+            position = position_nudge(y = 0.4)) +
+  scale_x_continuous(limits=c(0.25, 0.75)) +
+  facet_wrap(~feature, scales="free_y", ncol=1) +
+  geom_vline(xintercept = 0.5, linetype="solid", color = "black", size=0.2) +
+  annotate("rect", xmin = 0.4, xmax = 0.6, ymin = -Inf, ymax = Inf, 
+           fill = "black", alpha = 0.1, color = NA) +
+  ggtitle("") +
+  theme_bw() + 
+  ylab("") + 
+  xlab("Pr(Choosing a candidate)") +
+  theme(axis.text=element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=10)) +
+  scale_color_manual(values = c("#999999", "#000000"))
+
+
+```
+
+```{r radical right wing populist vs. mainstream right, }
+
+rmainstream <- conjoint %>% rowwise() %>% 
+  filter(any(c(partyID_type, partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type,
+               partyIDcjnt_type) %in% c("mainstream right"))) %>% 
+  select(country, panelist_id, imm, soc, climate, eu, run, selected, partyID_type,
+         partyvoteW2_type, eupartyIDw1_type, eupartyIDw2_type, partyIDcjnt_type)
+
+rmainstream <- anti_join(rmainstream, rw_populist)
+
+rmainstream_result <- cregg::cj(
+    test, 
+    selected ~ imm + soc + climate + eu + run,
+    id = ~ panelist_id,
+    estimate = "mm")
+
+rmainstream_result <- data.frame(rmainstream_result)
+rmainstream_result$Voters <- rep("mainstream right")
+combined_mr <- rbind(rmainstream_result, rwp_result)
+
+ggplot(combined_mr, aes(estimate, level, colour=Voters)) +
+  geom_point() + 
+  geom_errorbarh(data = combined_mr, mapping=aes(y=level, xmax=lower, xmin=upper), 
+                 height=0, size=0.5) + 
+  geom_text(aes(label = sprintf("%0.2f (%0.2f)", estimate, std.error)), size = 1.5, 
+            position = position_nudge(y = 0.4)) +
+  scale_x_continuous(limits=c(0.25, 0.75)) +
+  facet_wrap(~feature, scales="free_y", ncol=1) +
+  geom_vline(xintercept = 0.5, linetype="solid", color = "black", size=0.2) +
+  annotate("rect", xmin = 0.4, xmax = 0.6, ymin = -Inf, ymax = Inf, 
+           fill = "black", alpha = 0.1, color = NA) +
+  ggtitle("") +
+  theme_bw() + 
+  ylab("") + 
+  xlab("Pr(Choosing a candidate)") +
+  theme(axis.text=element_text(size=8), axis.title=element_text(size=8),
+        title=element_text(size=10)) +
+  scale_color_manual(values = c("#999999", "#000000"))
+
 
 ```
 
