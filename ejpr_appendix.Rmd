@@ -1,0 +1,149 @@
+
+---
+title: "Online Appendix for Paper 'Issue preferences of populist radical right and radical left voters: Cross-country evidence from conjoint survey experiments'"
+bibliography: bibtex.bib
+df_print: paged
+output:
+  pdf_document:
+    includes:
+      in_header: header.tex
+    latex_engine: xelatex
+    number_sections: yes
+  html_document:
+    df_print: paged
+fig_caption: yes
+biblio-style: apa6
+---
+
+\tableofcontents
+\newpage
+
+```{r packages, include=FALSE, error=FALSE, echo=FALSE, warning=FALSE}
+rm(list=ls())
+
+library(easypackages)
+
+packages("knitr", "tinytex", "kableExtra", "xtable", "fastDummies",
+          "summarytools", "reporttools", "Hmisc", "readxl",
+          "texreg", "stargazer", "broom", "lavaan",
+          "ggrepel", "scales", "tidyverse", "jtools", "rio")
+
+libraries("knitr", "tinytex", "kableExtra", "xtable", "fastDummies",
+          "summarytools", "reporttools", "Hmisc", "readxl",
+          "texreg", "stargazer", "broom", "lavaan",
+          "ggrepel", "scales","tidyverse", "jtools", "rio")
+
+knitr::opts_chunk$set(include=FALSE, error=FALSE, echo=FALSE, warning=FALSE, message=FALSE)
+
+## Load functions
+#source("functions.R")
+
+```
+
+
+\section{Comparison of sample to external benchmarks}
+
+* Table of our samples vs. population margins
+* Comparison of our samples to European Election Study (EES) on key dimensions: political interest, party identification, EP vote share by party [@ees.2019]
+* Comparison of voting in our sample to final EP result by party
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, fig.width=13, fig.height=5, message=FALSE, warning=FALSE, error=FALSE)
+```
+
+\newpage
+
+\section{Setup of the conjoint experiment}
+
+
+\textsc{Invitation}\\
+
+\textit{Dear participant,
+GESIS, the largest European infrastructure institute for the social sciences, conducts a survey on political preferences and how they relate to voting. The survey lasts approximately 5 minutes. The data will only be used for scientific purposes.\\
+We thank you very much for your participation and for your time!}
+
+\textsc{Instruction} \\
+
+\textit{Now we would like to show you the profiles of potential candidates for entering the parliament in [country's] national parliamentary election. Please take your time when reading the descriptions of each candidate.}\\
+
+\textit{You will be shown eight screens with different candidates and their policy proposals. We would like to know, \textbf{based on your preferences}, which one of the two candidates you would vote for in the next [country's] national parliamentary election. 
+People have different preferences on these issues, and there are no right or wrong answers.}
+
+\textsc{Questions}\\
+
+\textit{If you had to choose between them \textbf{based on your preferences}, which of the two candidates would you vote for?}
+
+\begin{itemize}
+Candidate 1}
+Candidate 2}
+\end{itemize}
+
+\textit{Independent of your choice, how would you rate each of the candidates described above? Please rank each candidate overall on a scale from 1 to 7, where 1 indicates that you strongly disapprove of the candidate and 7 that you strongly approve of the candidate.}
+
+![Screenshot of a conjoint task](/Users/eleonorakirkizh/ownCloud/Nora_Seb/Analysis/Conjoint analysis/Code/Screenshot.png)
+
+```{r , }
+
+```
+
+\newpage
+
+
+\section{Selection of issues and levels for the conjoint experiment}
+
+* Most important issue question bar charts
+* Facebook topic salience 
+
+```{r PRRV vs nonPRRV and most important issue, }
+
+df <- readRDS("../Data/ejpr_data.Rds") # survey with parties data
+
+# All countries, Wave 1: PRRV vs, nonPRRV
+df %>% 
+  filter(!is.na(issue_recode) & issue_recode != "Don't know/no responce") %>%
+  group_by(reduced_parties, issue_recode) %>% 
+  summarise(count=n()) %>%
+  mutate(perc=count/sum(count)) %>% 
+  ggplot(aes(x=issue_recode, y=perc*100)) + 
+  geom_bar(stat="identity", width=0.7) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.position="none") +
+  facet_wrap(~reduced_parties, scales="free_x") +
+    coord_cartesian(ylim = c(0, 40)) +
+  labs(title="Most important issue facing the country", x="", y="Percent") + 
+  scale_fill_manual(values=c("#666666", "#666666")) +
+  theme(axis.text = element_text(size=6), axis.title = element_text(size=6),
+        title=element_text(size=8)) # theme(panel.border=element_blank())
+
+
+```
+
+\newpage
+
+\section{Descriptives}
+
+\newpage
+
+\section{Classification of political parties}
+
+* left and right populism based on PopuList [@populist.2020]
+
+\newpage
+
+\section{Robustness tests and effect heterogeneity}
+
+* Plots by country
+* Plots by income, etc. if theoretically useful
+
+\newpage
+
+\section{Regression tables}
+
+\newpage
+
+\section{References}
+
+
+
+
+
